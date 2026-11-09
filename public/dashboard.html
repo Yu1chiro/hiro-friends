@@ -1,0 +1,788 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#F4F8FD">
+  <title>Dashboard | Nichijou Kotoba</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+JP:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+  <style>
+    body:not(.ready) { visibility:hidden; }
+    body { font-family:'Inter',sans-serif; background:#F4F8FD; color:#2C3E50; -webkit-tap-highlight-color:transparent; overscroll-behavior-y:none; }
+    .jp { font-family:'Noto Sans JP',sans-serif; }
+    .glass { background:rgba(255,255,255,.92); backdrop-filter:blur(12px); }
+    .hidden-section { display:none !important; }
+    :focus-visible { outline:3px solid #8BAED9; outline-offset:2px; }
+
+    /* Komponen */
+    .panel { background:#fff; border:1px solid #E1EBF5; border-radius:20px; box-shadow:0 4px 16px -8px rgba(67,113,165,.12); }
+    .inp { background:#F8FBFF; border:1px solid #D1E1F0; border-radius:12px; padding:10px 12px; min-height:44px; font-size:16px; font-weight:600; color:#4371A5; outline:none; }
+    .btn { display:flex; align-items:center; justify-content:center; gap:10px; min-height:52px; border-radius:16px; padding:12px 18px; font-weight:700; transition:transform .15s; }
+    .btn:active { transform:scale(.97); }
+    .btn-main { background:#5582C3; color:#fff; box-shadow:0 6px 16px -6px rgba(85,130,195,.5); }
+    .btn-lite { background:#E6F0FA; color:#4371A5; }
+    .btn-again { background:#FBEAEA; color:#B95364; }
+    .btn-hard  { background:#FCF1E1; color:#A87B31; }
+    .btn-good  { background:#E6F0FA; color:#4371A5; }
+    .btn-easy  { background:#E2F5EE; color:#2B7A62; }
+    .row { display:flex; align-items:center; gap:14px; width:100%; min-height:72px; padding:12px 14px; background:#fff; border:1px solid #E1EBF5; border-radius:18px; }
+    .row:active { background:#F4F8FD; }
+    .row.ok { background:#E2F5EE; border-color:#2B7A62; color:#2B7A62; }
+    .row.bad { background:#FBEAEA; border-color:#B95364; color:#B95364; }
+    .ico { width:48px; height:48px; flex:none; border-radius:14px; display:grid; place-items:center; color:#fff; font-size:20px; }
+    .iconbtn { width:44px; height:44px; border-radius:14px; display:grid; place-items:center; color:#5582C3; }
+    .iconbtn:active { background:#E6F0FA; }
+    .tile { background:#fff; border:1px solid #E1EBF5; border-radius:18px; padding:14px 16px; }
+    .tile small { display:block; font-size:12px; font-weight:600; color:#8BAED9; }
+    .tile b { display:block; margin-top:2px; font-size:28px; line-height:1.1; font-weight:800; }
+
+    /* Navigasi bawah */
+    #tabbar { position:fixed; left:0; right:0; bottom:0; z-index:30; padding-bottom:env(safe-area-inset-bottom); border-top:1px solid #E1EBF5; }
+    .tab { flex:1; min-height:56px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; font-size:12px; font-weight:700; color:#A4BCCD; }
+    .tab i { font-size:20px; }
+    .tab.active { color:#5582C3; }
+
+    /* Toast */
+    #toast { position:fixed; left:50%; bottom:calc(88px + env(safe-area-inset-bottom)); z-index:70; max-width:90vw; transform:translate(-50%,12px); opacity:0; pointer-events:none; background:#2C3E50; color:#fff; font-size:14px; font-weight:600; padding:12px 18px; border-radius:14px; transition:.25s; }
+    #toast.show { opacity:1; transform:translate(-50%,0); }
+
+    @keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:none} }
+    @keyframes slideUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:none} }
+    #quizPop { position:fixed; inset:0; z-index:80; display:grid; place-items:center; padding:24px; pointer-events:none; opacity:0; background:rgba(44,62,80,.28); transition:opacity .1s; }
+    #quizPop.show { opacity:1; }
+    .popcard { width:min(320px,88vw); max-height:70vh; overflow-y:auto; overflow-wrap:anywhere; background:#fff; border:3px solid; border-radius:24px; padding:20px; text-align:center; box-shadow:0 20px 50px -16px rgba(44,62,80,.45); }
+    .popcard.ok { border-color:#2B7A62; } .popcard.bad { border-color:#B95364; }
+    .popflag { font-size:13px; font-weight:800; } .popcard.ok .popflag { color:#2B7A62; } .popcard.bad .popflag { color:#B95364; }
+    .popk { font-weight:800; line-height:1.25; margin:4px 0 10px; }
+    .popl { font-size:11px; font-weight:700; color:#8BAED9; }
+    .popv { font-weight:700; line-height:1.4; margin-bottom:8px; }
+    @media (prefers-reduced-motion:reduce){ *{animation:none !important; transition:none !important;} }
+  </style>
+</head>
+<body class="min-h-screen">
+
+  <!-- App bar -->
+  <header id="appbar" class="glass fixed top-0 inset-x-0 z-30 border-b border-[#E1EBF5]" style="padding-top:env(safe-area-inset-top)">
+    <div class="h-14 max-w-2xl mx-auto px-3 flex items-center gap-1">
+      <button id="backBtn" class="iconbtn hidden-section" onclick="goBack()" aria-label="Kembali"><i class="fa-solid fa-arrow-left text-lg"></i></button>
+      <h1 id="headerTitle" class="flex-1 min-w-0 truncate px-1 text-[19px] font-extrabold tracking-tight">Beranda</h1>
+    </div>
+  </header>
+
+  <main class="max-w-2xl mx-auto px-4" style="padding-top:calc(56px + env(safe-area-inset-top) + 16px); padding-bottom:calc(88px + env(safe-area-inset-bottom))">
+
+    <!-- TAB: BERANDA -->
+    <section id="screen-home" class="space-y-4">
+      <div>
+        <h2 class="text-[22px] font-extrabold tracking-tight leading-tight">Okaeri, <span id="greetName" class="text-[#5582C3]">Learner</span></h2>
+        <p class="text-[14px] text-[#647B91] mt-1">Lanjutkan belajar bahasa Jepang hari ini.</p>
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div class="tile"><small><i class="fa-solid fa-crown mr-1"></i>Dikuasai</small><b class="text-[#2B7A62]" id="statMastered">0</b></div>
+        <button class="tile text-left" onclick="showScreen('review')"><small><i class="fa-solid fa-clock-rotate-left mr-1"></i>Perlu diulang</small><b class="text-[#B95364]" id="statDue">0</b></button>
+        <div class="tile"><small><i class="fa-solid fa-bullseye mr-1"></i>Akurasi kuis</small><b class="text-[#5582C3]" id="statAcc">-</b></div>
+        <div class="tile"><small><i class="fa-solid fa-flag-checkered mr-1"></i>Kuis selesai</small><b id="statQuizzes">0</b></div>
+      </div>
+      <div class="panel p-4">
+        <h3 class="font-bold text-[15px] text-[#647B91] mb-2">Statistik penguasaan</h3>
+        <div id="srsChart" class="w-full h-[240px]"></div>
+      </div>
+      <button class="btn btn-main w-full" onclick="showScreen('decks')"><i class="fa-solid fa-book-open"></i> Pilih materi belajar</button>
+    </section>
+
+    <!-- TAB: MATERI -->
+    <section id="screen-decks" class="hidden-section space-y-3">
+      <p class="text-[14px] text-[#647B91]">Pilih deck untuk mulai membaca atau mengulang kosakata.</p>
+      <div id="deckList" class="space-y-3">
+        <div class="p-8 text-center text-[#A4BCCD] font-medium"><i class="fa-solid fa-spinner fa-spin text-2xl mb-3 block"></i> Memuat kosakata...</div>
+      </div>
+    </section>
+
+    <!-- TAB: PROFIL -->
+    <section id="screen-profile" class="hidden-section space-y-4">
+      <div class="panel p-5 flex items-center gap-4">
+        <img id="userAvatar" src="" alt="Avatar" class="w-16 h-16 rounded-[20px] bg-[#E6F0FA] object-cover flex-none">
+        <div class="min-w-0">
+          <strong id="userName" class="block text-[18px] truncate">Memuat...</strong>
+          <span class="text-[14px] text-[#647B91]">Total XP: <b id="userXp" class="text-[#5582C3]">0</b></span>
+        </div>
+      </div>
+      <button id="logoutBtn" class="btn w-full bg-[#FBEAEA] text-[#B95364]"><i class="fa-solid fa-arrow-right-from-bracket"></i> Keluar</button>
+    </section>
+
+    <!-- LAYAR: MENU DECK -->
+    <section id="screen-deck-menu" class="hidden-section space-y-4">
+      <div class="panel p-4 flex items-center gap-4">
+        <div class="ico !w-14 !h-14 !text-2xl bg-[#E6F0FA] !text-[#5582C3]" id="menuDeckIcon"></div>
+        <div class="min-w-0">
+          <h2 class="text-[20px] font-extrabold leading-tight truncate" id="menuDeckName">Nama Deck</h2>
+          <p class="text-[14px] font-semibold text-[#8BAED9] mt-0.5" id="menuDeckCards">0 Kosakata</p>
+        </div>
+      </div>
+      <div class="panel p-4 flex items-center justify-between gap-3">
+        <label for="sessionLimit" class="min-w-0">
+          <span class="block text-[15px] font-bold">Jumlah kartu per sesi</span>
+          <span class="block text-[13px] text-[#8BAED9]">Batasi agar lebih fokus.</span>
+        </label>
+        <select id="sessionLimit" class="inp flex-none">
+          <option value="10" selected>10</option><option value="15">15</option><option value="20">20</option><option value="30">30</option><option value="9999">Semua</option>
+        </select>
+      </div>
+      <button onclick="startLearnMode()" class="row text-left">
+        <span class="ico bg-[#E6F0FA] !text-[#5582C3]"><i class="fa-solid fa-book-open"></i></span>
+        <span class="flex-1 min-w-0"><strong class="block text-[16px]">Baca kosakata</strong><small class="text-[13px] text-[#647B91]">Pelajari semua kartu dengan contoh kalimat</small></span>
+        <i class="fa-solid fa-chevron-right text-[#C8D9EA]"></i>
+      </button>
+      <button onclick="startSrsMode('new')" class="row text-left !bg-[#5582C3] !border-[#5582C3] text-white">
+        <span class="ico bg-white/20"><i class="fa-solid fa-seedling"></i></span>
+        <span class="flex-1 min-w-0"><strong class="block text-[16px]">Belajar kartu baru</strong><small class="text-[13px] text-[#DCE9F8]">Hanya kartu yang belum pernah dipelajari, lalu kuis</small></span>
+        <span id="badgeNew" class="hidden bg-white/25 text-white text-[12px] font-bold px-2.5 py-1 rounded-lg">0</span>
+      </button>
+      <button onclick="startSrsMode('review')" class="row text-left !bg-[#B95364] !border-[#B95364] text-white">
+        <span class="ico bg-white/20"><i class="fa-solid fa-rotate"></i></span>
+        <span class="flex-1 min-w-0"><strong class="block text-[16px]">Fukushu (復習)</strong><small class="text-[13px] text-[#FBE3E7]">Hanya kartu yang sudah jatuh tempo, lalu kuis</small></span>
+        <span id="badgeDue" class="hidden bg-white/25 text-white text-[12px] font-bold px-2.5 py-1 rounded-lg">0</span>
+      </button>
+    </section>
+
+    <!-- LAYAR: BACA -->
+    <section id="screen-learn" class="hidden-section space-y-3">
+      <p class="text-[14px] font-semibold text-[#647B91]" id="learnCounter">1/10</p>
+      <div id="learnContainer" class="space-y-3"></div>
+      <div class="fixed bottom-0 inset-x-0 z-30 glass border-t border-[#E1EBF5] px-4 pt-3" style="padding-bottom:calc(12px + env(safe-area-inset-bottom))">
+        <button onclick="showScreen('deck-menu')" class="btn btn-main w-full max-w-2xl mx-auto"><i class="fa-solid fa-check"></i> Selesai baca</button>
+      </div>
+    </section>
+    <!-- TAB: JADWAL REVIEW -->
+    <section id="screen-review" class="hidden-section space-y-4">
+      <div id="revSummary" class="grid grid-cols-3 gap-3"></div>
+      <div id="revDecks"></div>
+      <div id="revTimeline" class="space-y-4"></div>
+      <div class="panel p-4 text-[14px] leading-relaxed text-[#647B91]">
+        <h3 class="font-bold text-[15px] text-[#2C3E50] mb-2">Cara jadwal dihitung</h3>
+        <p>Setiap kali kamu menilai kartu di flashcard, jadwal berikutnya dihitung dari saat itu juga (bukan dari jam 00.00).</p>
+        <ul class="mt-2 space-y-1">
+          <li><b class="text-[#B95364]">Lupa:</b> diulang 1 menit lagi, level kembali ke 0.</li>
+          <li><b class="text-[#A87B31]">Sulit:</b> jeda 1 hari, selanjutnya jeda sebelumnya dikali 1,2.</li>
+          <li><b class="text-[#4371A5]">Ingat:</b> jeda 2 hari, selanjutnya dikali 2,5.</li>
+          <li><b class="text-[#2B7A62]">Mudah:</b> jeda 4 hari, selanjutnya dikali 3,5.</li>
+        </ul>
+        <p class="mt-2">Kartu dianggap dikuasai saat level 4 atau lebih. Hasil kuis tidak mengubah jadwal ini.</p>
+      </div>
+    </section>
+
+    <!-- LAYAR: HASIL KUIS -->
+    <section id="screen-result" class="hidden-section space-y-4"><div id="resBody" class="space-y-4"></div></section>
+  </main>
+
+  <!-- LAYAR: KUIS (layar penuh) -->
+  <section id="screen-quiz" class="hidden-section fixed inset-0 z-40 flex-col bg-[#F4F8FD]" style="padding-top:env(safe-area-inset-top); padding-bottom:env(safe-area-inset-bottom); height:100dvh">
+    <div class="w-full max-w-2xl mx-auto flex flex-col h-full px-4">
+      <div class="h-14 flex-none flex items-center gap-3">
+        <button onclick="quitQuiz()" class="iconbtn" aria-label="Keluar dari kuis"><i class="fa-solid fa-xmark text-lg"></i></button>
+        <div class="flex-1 h-2.5 rounded-full bg-[#E1EBF5] overflow-hidden"><div id="quizBar" class="h-full rounded-full bg-[#5582C3] transition-all" style="width:0"></div></div>
+        <span id="quizStage" class="text-[13px] font-bold text-[#647B91] min-w-[88px] text-right">Pilihan ganda</span>
+      </div>
+      <div id="quizBody" class="flex-1 min-h-0 overflow-y-auto py-2"></div>
+      <div id="quizFoot" class="flex-none py-3 min-h-[76px]"></div>
+    </div>
+  </section>
+
+  <!-- LAYAR: FLASHCARD (layar penuh) -->
+  <section id="screen-srs" class="hidden-section fixed inset-0 z-40 flex-col bg-[#F4F8FD]" style="padding-top:env(safe-area-inset-top); padding-bottom:env(safe-area-inset-bottom); height:100dvh">
+    <div class="w-full max-w-2xl mx-auto flex flex-col h-full px-4">
+      <div class="h-14 flex-none flex items-center justify-between">
+        <button onclick="exitTo()" class="iconbtn" aria-label="Tutup"><i class="fa-solid fa-xmark text-lg"></i></button>
+        <span class="text-[14px] font-bold text-[#647B91]" id="srsCounter">Sisa: 0</span>
+        <span class="text-[12px] font-bold text-[#647B91] bg-white border border-[#E1EBF5] px-3 py-1.5 rounded-lg" id="srsCardStatus">Kartu baru</span>
+      </div>
+      <div class="panel flex-1 min-h-0 overflow-y-auto p-5 text-center flex flex-col">
+        <div class="m-auto w-full flex flex-col items-center">
+          <div id="srsDeck" class="text-[12px] font-bold text-[#8BAED9] mb-2 truncate max-w-full"></div>
+          <div id="srsKanji" class="jp text-[44px] leading-tight font-extrabold break-words w-full"></div>
+          <div id="srsRevealed" class="hidden w-full flex-col items-center animate-[fadeIn_0.3s_ease-out]">
+            <div class="w-12 h-1 bg-[#E6F0FA] rounded-full my-5"></div>
+            <div id="srsFuri" class="jp text-[#5582C3] text-[22px] font-bold mb-1"></div>
+            <div id="srsArti" class="text-[18px] font-bold"></div>
+            <div class="w-full mt-4 bg-[#F8FBFF] p-4 rounded-2xl border border-[#E6F0FA] jp hidden text-left" id="srsExampleBox">
+              <span id="srsExample" class="block font-semibold text-[15px] text-[#4371A5] leading-relaxed"></span>
+              <span id="srsTrans" class="block text-[13px] mt-2 text-[#8BAED9] leading-relaxed"></span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="flex-none py-3">
+        <button id="srsRevealBtn" class="btn btn-main w-full" onclick="revealSrs()"><i class="fa-solid fa-eye"></i> Tampilkan jawaban</button>
+        <div id="srsRateBtns" class="hidden grid grid-cols-4 gap-2 animate-[slideUp_0.3s_ease-out]">
+          <button class="btn btn-again flex-col !gap-1 !px-1" onclick="rateSrs('again')"><span class="text-[14px] font-extrabold">Lupa</span><small class="text-[12px] font-semibold opacity-80">&lt; 1m</small></button>
+          <button class="btn btn-hard flex-col !gap-1 !px-1" onclick="rateSrs('hard')"><span class="text-[14px] font-extrabold">Sulit</span><small class="text-[12px] font-semibold opacity-80" id="t-hard">1h</small></button>
+          <button class="btn btn-good flex-col !gap-1 !px-1" onclick="rateSrs('good')"><span class="text-[14px] font-extrabold">Ingat</span><small class="text-[12px] font-semibold opacity-80" id="t-good">1d</small></button>
+          <button class="btn btn-easy flex-col !gap-1 !px-1" onclick="rateSrs('easy')"><span class="text-[14px] font-extrabold">Mudah</span><small class="text-[12px] font-semibold opacity-80" id="t-easy">4d</small></button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Navigasi bawah -->
+  <nav id="tabbar" class="glass">
+    <div class="max-w-2xl mx-auto flex">
+      <button class="tab active" data-screen="home" onclick="showScreen('home')"><i class="fa-solid fa-house"></i>Beranda</button>
+      <button class="tab" data-screen="decks" onclick="showScreen('decks')"><i class="fa-solid fa-layer-group"></i>Materi</button>
+      <button class="tab" data-screen="review" onclick="showScreen('review')"><i class="fa-solid fa-clock-rotate-left"></i>Review</button>
+      <button class="tab" data-screen="profile" onclick="showScreen('profile')"><i class="fa-solid fa-user"></i>Profil</button>
+    </div>
+  </nav>
+  <div id="quizPop" aria-live="assertive"></div>
+  <div id="toast" role="status" aria-live="polite"></div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+    import { getDatabase, ref, onValue, update, increment, push } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCKuYqawGN0V9LNkf0Mx4zqV0RI2wM4mWk",
+      authDomain: "hiro-friends.firebaseapp.com",
+      databaseURL: "https://hiro-friends-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "hiro-friends",
+      storageBucket: "hiro-friends.firebasestorage.app",
+      messagingSenderId: "63657838295",
+      appId: "1:63657838295:web:6be499090546143c0ad292",
+      measurementId: "G-GGDN66ZW3T"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getDatabase(app);
+    
+    // Global State
+    let currentUser = null;
+    let srsChartInstance = null;
+    const state = {
+      decks: [],
+      activeDeck: null,
+      cardsAPI: [],        
+      userProgress: {},    
+      srsQueue: [],        
+      currentSrsCard: null 
+    };
+
+    // UI Utilities
+    const TITLES = { home: 'Beranda', decks: 'Materi', review: 'Jadwal review', profile: 'Profil', learn: 'Baca kosakata', result: 'Hasil kuis' };
+    const TABS = ['home', 'decks', 'review', 'profile'];
+    state.screen = 'home';
+    window.toast = (msg) => {
+      const t = document.getElementById('toast');
+      t.textContent = msg; t.classList.add('show');
+      clearTimeout(window._tt); window._tt = setTimeout(() => t.classList.remove('show'), 2800);
+    };
+    window.showScreen = (screen) => {
+      state.screen = screen;
+      ['home', 'decks', 'review', 'profile', 'deck-menu', 'learn', 'srs', 'quiz', 'result'].forEach(id =>
+        document.getElementById(`screen-${id}`).classList.toggle('hidden-section', id !== screen));
+      const isTab = TABS.includes(screen);
+      document.getElementById('tabbar').classList.toggle('hidden-section', !isTab);
+      document.getElementById('appbar').classList.toggle('hidden-section', ['srs', 'quiz'].includes(screen));
+      document.getElementById('backBtn').classList.toggle('hidden-section', isTab);
+      document.getElementById('headerTitle').textContent = screen === 'deck-menu' ? (state.activeDeck?.name || 'Materi') : (TITLES[screen] || '');
+      document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.screen === screen));
+      window.scrollTo({ top: 0 });
+      if (screen === 'review') renderReview();
+      if (screen === 'deck-menu') refreshDeckBadges();
+    };
+    window.goBack = () => showScreen(state.screen === 'deck-menu' ? 'decks' : 'deck-menu');
+
+    // 1. Firebase Auth & Progress Listener
+    onAuthStateChanged(auth, (user) => {
+      if (!user) {
+        // Samakan status server: hapus cookie sesi agar /dashboard ditolak server, lalu ke login
+        fetch("/api/auth/logout", { method: "POST" }).catch(() => {}).finally(() => window.location.replace("/"));
+        return;
+      }
+      document.body.classList.add("ready");
+      currentUser = user;
+      
+      document.getElementById("userName").textContent = user.displayName || "Learner";
+      document.getElementById("greetName").textContent = user.displayName?.split(" ")[0] || "Learner";
+      document.getElementById("userAvatar").src = user.photoURL || "";
+      
+      onValue(ref(db, `users/${user.uid}`), (snapshot) => {
+        const data = snapshot.val() || {};
+        state.userProgress = data.progress || {};
+        state.quizzes = data.quizzes || {};
+        document.getElementById("userXp").textContent = data.stats?.xp || 0;
+        updateGlobalStats();
+      });
+
+      fetchDecksFromPostgres();
+    });
+
+    async function apiFetch(url) {
+      let res = await fetch(url, { credentials: "same-origin" });
+      if (res.status === 401 && currentUser) {
+        // Cookie sesi server habis: buat ulang dari login Firebase yang masih aktif
+        try {
+          const idToken = await currentUser.getIdToken(true);
+          const s = await fetch("/api/auth/session", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ idToken }) });
+          if (s.ok) res = await fetch(url, { credentials: "same-origin" });
+        } catch {}
+      }
+      if (res.status === 401) {
+        await signOut(auth).catch(() => {});
+        window.location.replace("/login");
+        throw new Error("Sesi berakhir");
+      }
+      return res;
+    }
+
+    document.getElementById("logoutBtn").onclick = () =>
+      fetch("/api/auth/logout", { method: "POST" }).finally(() => signOut(auth));
+
+    // 2. Fetch API Data
+    async function fetchDecksFromPostgres() {
+      try {
+        const res = await apiFetch("/api/decks");
+        const json = await res.json();
+        state.decks = json.data;
+        
+        document.getElementById("deckList").innerHTML = state.decks.map(d => `
+          <button class="row text-left" onclick="openDeckMenu(${d.id})">
+            <span class="ico" style="background:${d.color}"><i class="fa-solid ${d.icon}"></i></span>
+            <span class="flex-1 min-w-0">
+              <strong class="block text-[16px] leading-tight truncate">${d.name}</strong>
+              <small class="text-[13px] font-semibold text-[#8BAED9]">${d.card_count} kartu</small>
+            </span>
+            <i class="fa-solid fa-chevron-right text-[#C8D9EA]"></i>
+          </button>
+        `).join("");
+      } catch (err) {
+        document.getElementById("deckList").innerHTML = `<p class="text-[#B95364] font-bold col-span-full text-center p-8 bg-[#FBEAEA] rounded-[24px]">Koneksi ke server database gagal.</p>`;
+      }
+    }
+
+    function updateGlobalStats() {
+      let mastered = 0, learning = 0, due = 0;
+      const now = Date.now();
+      
+      Object.values(state.userProgress).forEach(card => {
+        if (card.level >= 4) mastered++;
+        else learning++;
+        if (card.nextReview && card.nextReview <= now) due++;
+      });
+      
+      document.getElementById("statMastered").textContent = mastered;
+      document.getElementById("statDue").textContent = due;
+      const qs = Object.values(state.quizzes || {});
+      const qc = qs.reduce((a, x) => a + (x.correct || 0), 0), qt = qs.reduce((a, x) => a + (x.total || 0), 0);
+      document.getElementById("statAcc").textContent = qt ? Math.round(qc / qt * 100) + "%" : "-";
+      document.getElementById("statQuizzes").textContent = qs.length;
+      if (state.screen === "review") renderReview();
+      
+      const chartData = [mastered, learning, due];
+      if (srsChartInstance) {
+        srsChartInstance.updateSeries(chartData);
+      } else {
+        const options = {
+          series: chartData,
+          chart: { type: 'donut', height: '100%', fontFamily: 'Inter' },
+          labels: ['Mastered', 'Learning', 'Due Review'],
+          colors: ['#2B7A62', '#5582C3', '#B95364'],
+          plotOptions: { donut: { size: '78%', labels: { show: true, name: { show: false }, value: { fontSize: '32px', fontWeight: 800, color: '#2C3E50' }, total: { show: true, label: 'Total', fontSize: '12px', fontWeight: 700, color: '#A4BCCD' } } } },
+          dataLabels: { enabled: false },
+          legend: { position: 'bottom', fontSize: '13px', fontWeight: 600, markers: { radius: 12 } },
+          stroke: { width: 4, colors: ['#ffffff'] }
+        };
+        srsChartInstance = new ApexCharts(document.querySelector("#srsChart"), options);
+        srsChartInstance.render();
+      }
+    }
+
+    window.openDeckMenu = async (deckId) => {
+      const deck = state.decks.find(d => String(d.id) === String(deckId));
+      if (!deck) return toast("Error: Deck tidak ditemukan.");
+      
+      state.activeDeck = deck;
+      document.getElementById("menuDeckName").textContent = deck.name;
+      document.getElementById("menuDeckCards").textContent = `${deck.card_count} Kosakata`;
+      document.getElementById("menuDeckIcon").innerHTML = `<i class="fa-solid ${deck.icon}"></i>`;
+      
+      try {
+        const res = await apiFetch(`/api/flashcards?deckId=${deckId}`);
+        const json = await res.json();
+        state.cardsAPI = json.data;
+        
+        refreshDeckBadges();
+        
+        showScreen('deck-menu');
+        return true;
+      } catch (err) {
+        toast("Gagal memuat kartu untuk deck ini.");
+      }
+    };
+
+    // Helper: Terapkan Filter Session Limit
+    function applySessionLimit(cardsArray, selId = "sessionLimit") {
+      const limitVal = parseInt(document.getElementById(selId).value);
+      // Acak kartu agar yang muncul tidak itu-itu saja di bagian awal
+      const shuffled = [...cardsArray].sort(() => Math.random() - 0.5);
+      return shuffled.slice(0, limitVal);
+    }
+
+    // 4. MODE: KOTOBA READ / LEARN (Mazii Style)
+    window.startLearnMode = () => {
+      if (!state.cardsAPI.length) return toast("Belum ada kosakata di deck ini.");
+      
+      const sessionCards = applySessionLimit(state.cardsAPI);
+      document.getElementById("learnCounter").textContent = `${sessionCards.length} kosakata`;
+      
+      const html = sessionCards.map(c => `
+        <article class="panel p-4">
+          <div class="flex items-baseline justify-between gap-3">
+            <div class="jp text-[34px] font-extrabold leading-tight break-words min-w-0">${c.kanji}</div>
+          </div>
+          <div class="jp text-[#5582C3] font-bold text-[17px] mt-1">${c.furigana}</div>
+          <div class="text-[16px] font-semibold mt-1">${c.arti}</div>
+          ${c.example_sentence ? `
+            <div class="mt-3 pt-3 border-t border-[#E1EBF5]">
+              <div class="jp text-[15px] font-medium text-[#4371A5] leading-relaxed">${c.example_sentence}</div>
+              <div class="text-[13px] text-[#8BAED9] mt-1 leading-relaxed">${c.sentence_translation || ''}</div>
+            </div>` : ''}
+          ${c.audio_url ? `<audio controls src="${c.audio_url}" class="h-11 mt-3 w-full"></audio>` : ''}
+        </article>
+      `).join("");
+      
+      document.getElementById("learnContainer").innerHTML = html;
+      showScreen('learn');
+    };
+
+    // 5. MODE: SRS FLASHCARD (Anki Style)
+    window.startSrsMode = (mode = 'new', limitId = 'sessionLimit', returnTo = 'deck-menu') => {
+      const now = Date.now();
+      const pool = state.cardsAPI.filter(c => {
+        const p = state.userProgress[c.id];
+        return mode === 'review' ? !!(p && p.nextReview && p.nextReview <= now) : !p;
+      });
+      if (!pool.length)
+        return toast(mode === 'review' ? "Belum ada kartu yang jatuh tempo di deck ini." : "Tidak ada kartu baru di deck ini. Cek Fukushu untuk kartu jatuh tempo.");
+      state.srsMode = mode; state.returnTo = returnTo; state.quizPool = null;
+      state.sessionMeta = { deckId: state.activeDeck?.id ?? null, deckName: state.activeDeck?.name ?? '' };
+      state.srsQueue = applySessionLimit(pool, limitId);
+      state.sessionCards = [...state.srsQueue];
+      showScreen('srs');
+      renderSrsCard();
+    };
+
+    function renderSrsCard() {
+      if (!state.srsQueue.length) {
+        toast("Flashcard selesai. Lanjut ke kuis!");
+        return startQuiz();
+      }
+      
+      state.currentSrsCard = state.srsQueue.pop();
+      const c = state.currentSrsCard;
+      const prog = state.userProgress[c.id] || { level: 0, interval: 0 };
+      
+      document.getElementById("srsCounter").textContent = `Sisa Antrian: ${state.srsQueue.length + 1}`;
+      document.getElementById("srsKanji").textContent = c.kanji;
+      document.getElementById("srsDeck").textContent = c.deckName || state.activeDeck?.name || "";
+      document.getElementById("srsFuri").textContent = c.furigana;
+      document.getElementById("srsArti").textContent = c.arti;
+      
+      document.getElementById("srsCardStatus").textContent = state.srsMode === 'review' ? `Fukushu, level ${prog.level}` : 'Kartu baru';
+      
+      if (c.example_sentence) {
+        document.getElementById("srsExampleBox").classList.remove("hidden");
+        document.getElementById("srsExampleBox").classList.add("flex", "flex-col");
+        document.getElementById("srsExample").textContent = c.example_sentence;
+        document.getElementById("srsTrans").textContent = c.sentence_translation;
+      } else {
+        document.getElementById("srsExampleBox").classList.add("hidden");
+        document.getElementById("srsExampleBox").classList.remove("flex", "flex-col");
+      }
+
+      let { interval } = prog;
+      document.getElementById("t-hard").textContent = interval === 0 ? '1d' : Math.round(interval * 1.2) + 'd';
+      document.getElementById("t-good").textContent = interval === 0 ? '2d' : Math.round(interval * 2.5) + 'd';
+      document.getElementById("t-easy").textContent = interval === 0 ? '4d' : Math.round(interval * 3.5) + 'd';
+
+      document.getElementById("srsRevealed").classList.add("hidden");
+      document.getElementById("srsRevealed").classList.remove("flex");
+      document.getElementById("srsRateBtns").classList.add("hidden");
+      document.getElementById("srsRevealBtn").classList.remove("hidden");
+    }
+
+    window.revealSrs = () => {
+      document.getElementById("srsRevealed").classList.remove("hidden");
+      document.getElementById("srsRevealed").classList.add("flex");
+      document.getElementById("srsRevealBtn").classList.add("hidden");
+      document.getElementById("srsRateBtns").classList.remove("hidden");
+    };
+
+    window.rateSrs = async (rating) => {
+      const c = state.currentSrsCard;
+      let prog = state.userProgress[c.id] || { level: 0, interval: 0 };
+      const now = Date.now();
+      
+      let newLevel = prog.level;
+      let newInterval = prog.interval;
+      let xpGain = 0;
+
+      if (rating === 'again') {
+        newLevel = 0;
+        newInterval = 0;
+      } else if (rating === 'hard') {
+        newInterval = newInterval === 0 ? 1 : newInterval * 1.2;
+        xpGain = 5;
+      } else if (rating === 'good') {
+        newLevel++;
+        newInterval = newInterval === 0 ? 2 : newInterval * 2.5;
+        xpGain = 10;
+      } else if (rating === 'easy') {
+        newLevel += 2;
+        newInterval = newInterval === 0 ? 4 : newInterval * 3.5;
+        xpGain = 15;
+      }
+
+      const nextReview = rating === 'again' 
+        ? now + (60 * 1000) 
+        : now + (newInterval * 24 * 60 * 60 * 1000); 
+
+      const updates = {};
+      updates[`users/${currentUser.uid}/progress/${c.id}`] = {
+        level: newLevel,
+        interval: newInterval,
+        nextReview: nextReview,
+        lastRated: rating
+      };
+      
+      if (xpGain > 0) {
+        updates[`users/${currentUser.uid}/stats/xp`] = increment(xpGain);
+      }
+
+      await update(ref(db), updates);
+      
+      if (rating === 'again') {
+        // Jika Again, selipkan kartu ini di tengah/akhir antrean (jangan ditaruh paling depan agar user ada jeda napas)
+        state.srsQueue.splice(Math.floor(state.srsQueue.length / 2), 0, c);
+      }
+      
+      renderSrsCard();
+    };
+
+    // ===== KUIS: pilihan ganda -> pasangkan -> ketik =====
+    const $ = (id) => document.getElementById(id);
+    const kana = (s) => String(s || '').normalize('NFKC').replace(/\s+/g, '').replace(/[\u30A1-\u30F6]/g, (c) => String.fromCharCode(c.charCodeAt(0) - 0x60)).toLowerCase();
+    const shuf = (a) => { a = [...a]; for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+    const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
+    const STAGES = { mc: 'Pilihan ganda', matching: 'Pasangkan', typing: 'Ketik' };
+    const nextBtn = (label = 'Lanjut') => `<button class="btn btn-main w-full" onclick="nextQuiz()">${label}</button>`;
+    const kanjiCard = (c, title, extra = '') => `<div class="panel p-6 text-center"><div class="text-[13px] font-bold text-[#8BAED9] mb-2">${title}</div><div class="jp text-[48px] font-extrabold leading-tight break-words">${esc(c.kanji)}</div>${extra}</div>`;
+
+    const POPUP_MS = 1000; // durasi popup jawaban (milidetik)
+    // Ukuran font menyesuaikan panjang teks: [[batas panjang, ukuran], ...], lalu ukuran minimum
+    const fs = (t, steps, min) => (steps.find(([n]) => String(t).length <= n) || [0, min])[1];
+    function showPop(c, ok, cb) {
+      const el = $('quizPop');
+      el.innerHTML = `<div class="popcard ${ok ? 'ok' : 'bad'}"><div class="popflag">${ok ? 'Benar' : 'Salah'}</div><div class="jp popk" style="font-size:${fs(c.kanji, [[4, 30], [8, 24]], 19)}px">${esc(c.kanji)}</div><div class="popl">Cara baca</div><div class="jp popv" style="font-size:${fs(c.furigana, [[8, 18]], 15)}px">${esc(c.furigana)}</div><div class="popl">Arti</div><div class="popv" style="font-size:${fs(c.arti, [[30, 16]], 14)}px">${esc(c.arti)}</div></div>`;
+      el.classList.add('show');
+      clearTimeout(window._pop);
+      window._pop = setTimeout(() => { el.classList.remove('show'); cb?.(); }, POPUP_MS);
+    }
+
+    function startQuiz() {
+      const cards = shuf(state.sessionCards || []);
+      if (!cards.length) return exitTo();
+      state.quiz = { cards, stage: 'mc', i: 0, round: 0, solved: 0, m: null, locked: false, checked: false, res: { mc: {}, matching: {}, typing: {} } };
+      showScreen('quiz');
+      renderQuiz();
+    }
+    function setQuizHead() {
+      const q = state.quiz, n = q.cards.length;
+      const done = { mc: 0, matching: n, typing: 2 * n }[q.stage] + (q.stage === 'matching' ? q.solved : q.i);
+      $('quizBar').style.width = Math.round(done / (3 * n) * 100) + '%';
+      $('quizStage').textContent = STAGES[q.stage];
+    }
+    function renderQuiz() {
+      setQuizHead();
+      ({ mc: renderMc, matching: renderMatch, typing: renderTyping })[state.quiz.stage]();
+    }
+    window.quitQuiz = () => { if (confirm('Keluar dari kuis? Jawaban sejauh ini tidak disimpan.')) { state.quiz = null; exitTo(); } };
+    window.nextQuiz = () => {
+      const q = state.quiz; q.i++;
+      if (q.i < q.cards.length) return renderQuiz();
+      if (q.stage === 'mc') { q.stage = 'matching'; q.i = 0; q.round = 0; q.m = null; return renderQuiz(); }
+      finishQuiz();
+    };
+
+    // Tahap 1: pilihan ganda (kanji -> cara baca)
+    function renderMc() {
+      const q = state.quiz, c = q.cards[q.i]; q.locked = false;
+      const seen = new Set([kana(c.furigana)]), pool = [];
+      shuf(state.quizPool || state.cardsAPI).forEach((x) => { const k = kana(x.furigana); if (!seen.has(k) && pool.length < 3) { seen.add(k); pool.push(x); } });
+      $('quizBody').innerHTML = kanjiCard(c, 'Bagaimana cara membacanya?') +
+        `<div class="space-y-3 mt-4">${shuf([c, ...pool]).map((o) => `<button data-o="${o.id}" class="row jp text-[20px] font-bold justify-center" onclick="answerMc('${o.id}')">${esc(o.furigana)}</button>`).join('')}</div>`;
+      $('quizFoot').innerHTML = '';
+    }
+    window.answerMc = (oid) => {
+      const q = state.quiz, c = q.cards[q.i]; if (q.locked) return; q.locked = true;
+      const ok = String(c.id) === String(oid);
+      q.res.mc[c.id] = ok;
+      document.querySelectorAll('[data-o]').forEach((b) => {
+        if (b.dataset.o === String(c.id)) b.classList.add('ok');
+        else if (b.dataset.o === String(oid)) b.classList.add('bad');
+      });
+      showPop(c, ok, () => { if (state.quiz === q) nextQuiz(); });
+    };
+
+    // Tahap 2: pasangkan kanji dengan cara baca (5 pasang per ronde)
+    function renderMatch() {
+      const q = state.quiz, n = q.cards.length, chunk = q.cards.slice(q.round * 5, q.round * 5 + 5);
+      if (!q.m || q.m.round !== q.round) q.m = { round: q.round, chunk, right: shuf(chunk), selL: null, selR: null, dL: new Set(), dR: new Set(), miss: {} };
+      const m = q.m;
+      const btn = (side, x, sel, done, txt) => `<button class="row jp justify-center text-[18px] font-bold break-words !min-h-[60px] ${done ? 'ok' : ''} ${sel ? '!border-[#5582C3] !bg-[#E6F0FA]' : ''}" ${done ? 'disabled' : ''} onclick="pickM('${side}','${x.id}')">${esc(txt)}</button>`;
+      $('quizBody').innerHTML = `<p class="text-center text-[14px] font-semibold text-[#647B91] mb-3">Pasangkan kanji dengan cara bacanya (ronde ${q.round + 1} dari ${Math.ceil(n / 5)})</p>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="space-y-3">${m.chunk.map((x) => btn('L', x, m.selL === String(x.id), m.dL.has(String(x.id)), x.kanji)).join('')}</div>
+          <div class="space-y-3">${m.right.map((x) => btn('R', x, m.selR === String(x.id), m.dR.has(String(x.id)), x.furigana)).join('')}</div>
+        </div>`;
+      $('quizFoot').innerHTML = '';
+    }
+    window.pickM = (side, id) => {
+      const q = state.quiz, m = q.m;
+      if (side === 'L') m.selL = m.selL === id ? null : id; else m.selR = m.selR === id ? null : id;
+      if (m.selL && m.selR) {
+        const L = q.cards.find((x) => String(x.id) === m.selL), R = q.cards.find((x) => String(x.id) === m.selR);
+        if (kana(L.furigana) === kana(R.furigana)) {
+          m.dL.add(m.selL); m.dR.add(m.selR); q.res.matching[L.id] = !m.miss[m.selL]; q.solved++; setQuizHead();
+          if (m.dL.size === m.chunk.length) setTimeout(() => { if (state.quiz === q) nextRound(); }, POPUP_MS);
+        } else { m.miss[m.selL] = true; navigator.vibrate?.(60); toast('Belum cocok, coba lagi.'); }
+        m.selL = m.selR = null;
+      }
+      renderMatch();
+    };
+    window.nextRound = () => {
+      const q = state.quiz; q.round++;
+      if (q.round * 5 >= q.cards.length) { q.stage = 'typing'; q.i = 0; }
+      renderQuiz();
+    };
+
+    // Tahap 3: ketik cara baca (keyboard Jepang)
+    function renderTyping() {
+      const q = state.quiz, c = q.cards[q.i]; q.checked = false;
+      $('quizBody').innerHTML = kanjiCard(c, 'Ketik cara membacanya', `<div class="text-[14px] text-[#647B91] mt-2">Arti: ${esc(c.arti)}</div>`) +
+        `<input id="quizInput" class="inp w-full mt-4 text-center jp !text-[22px]" lang="ja" inputmode="text" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="ひらがな" onkeydown="if(event.key==='Enter'&&!event.isComposing)typingAction()">
+         <p class="text-center text-[13px] text-[#8BAED9] mt-2">Aktifkan keyboard Jepang, lalu ketik dengan hiragana.</p><div id="typeFb"></div>`;
+      $('quizFoot').innerHTML = `<button class="btn btn-main w-full" onclick="typingAction()">Periksa jawaban</button>`;
+      $('quizInput').focus();
+    }
+    window.typingAction = () => {
+      const q = state.quiz, c = q.cards[q.i];
+      if (q.checked) return;
+      const v = $('quizInput').value;
+      if (!v.trim()) return toast('Ketik jawabanmu dulu.');
+      const ok = kana(v) === kana(c.furigana);
+      q.res.typing[c.id] = ok; q.checked = true; $('quizInput').readOnly = true;
+      showPop(c, ok, () => { if (state.quiz === q) nextQuiz(); });
+      $('quizFoot').innerHTML = '';
+    };
+
+    // Hasil & statistik performa keseluruhan
+    function finishQuiz() {
+      const q = state.quiz, n = q.cards.length, keys = Object.keys(STAGES);
+      const st = keys.map((k) => ({ k, c: Object.values(q.res[k]).filter(Boolean).length }));
+      const c = st.reduce((s, x) => s + x.c, 0), t = 3 * n, acc = Math.round(c / t * 100), xp = c * 2 + (acc >= 90 ? 10 : 0);
+      const wrong = q.cards.filter((x) => keys.some((k) => q.res[k][x.id] === false));
+      const label = acc >= 90 ? 'Luar biasa!' : acc >= 70 ? 'Bagus sekali' : acc >= 50 ? 'Terus berlatih' : 'Perlu diulang lagi';
+      const color = acc >= 70 ? 'text-[#2B7A62]' : acc >= 50 ? 'text-[#A87B31]' : 'text-[#B95364]';
+
+      if (currentUser) {
+        const uid = currentUser.uid, key = push(ref(db, `users/${uid}/quizzes`)).key, upd = {};
+        upd[`users/${uid}/quizzes/${key}`] = { at: Date.now(), deckId: state.sessionMeta?.deckId ?? null, deckName: state.sessionMeta?.deckName ?? '', mode: state.srsMode || 'new', total: t, correct: c, accuracy: acc, mc: st[0].c, matching: st[1].c, typing: st[2].c, cards: n };
+        upd[`users/${uid}/stats/xp`] = increment(xp);
+        update(ref(db), upd).catch(() => toast('Hasil kuis gagal disimpan.'));
+      }
+      $('resBody').innerHTML = `
+        <div class="panel p-6 text-center">
+          <div class="text-[56px] leading-none font-extrabold ${color}">${acc}%</div>
+          <p class="font-bold text-[18px] mt-2">${label}</p>
+          <p class="text-[14px] text-[#647B91] mt-1">${c} dari ${t} jawaban benar</p>
+          <p class="text-[14px] font-bold text-[#5582C3] mt-1">+${xp} XP</p>
+        </div>
+        <div class="panel p-4 space-y-4">
+          ${st.map((x) => `<div><div class="flex justify-between text-[14px] font-bold"><span>${STAGES[x.k]}</span><span class="text-[#647B91]">${x.c} dari ${n}</span></div><div class="h-2.5 mt-1.5 rounded-full bg-[#E1EBF5] overflow-hidden"><div class="h-full rounded-full bg-[#5582C3]" style="width:${Math.round(x.c / n * 100)}%"></div></div></div>`).join('')}
+        </div>
+        <div class="panel p-4">
+          <h3 class="font-bold text-[15px] text-[#647B91] mb-3">${wrong.length ? 'Perlu dipelajari lagi' : 'Semua kata benar pada percobaan pertama'}</h3>
+          <div class="space-y-3">${wrong.map((x) => `<div class="flex items-baseline gap-3"><span class="jp text-[22px] font-extrabold">${esc(x.kanji)}</span><span class="jp text-[#5582C3] font-bold">${esc(x.furigana)}</span><span class="text-[14px] text-[#647B91] truncate">${esc(x.arti)}</span></div>`).join('')}</div>
+        </div>
+        <button class="btn btn-main w-full" onclick="exitTo()"><i class="fa-solid fa-check"></i> Selesai</button>`;
+      showScreen('result');
+    }
+
+    // ===== PANEL JADWAL REVIEW =====
+    const sod = (t) => { const d = new Date(t); d.setHours(0, 0, 0, 0); return d.getTime(); };
+    const diffDays = (t) => Math.round((sod(t) - sod(Date.now())) / 86400000);
+    const fmtTime = (t) => new Date(t).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+    const fmtDate = (t) => new Date(t).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
+
+    async function loadAllCards() {
+      if (state.allCards) return state.allCards;
+      if (!state.decks.length) return {};
+      const map = {};
+      await Promise.all(state.decks.map(async (d) => {
+        const j = await (await apiFetch(`/api/flashcards?deckId=${d.id}`)).json();
+        (j.data || []).forEach((c) => { map[c.id] = { ...c, deckId: d.id, deckName: d.name }; });
+      }));
+      return (state.allCards = map);
+    }
+    window.setRevLimit = (v) => { state.revLimit = v; };
+    window.exitTo = () => showScreen(state.returnTo || 'deck-menu');
+    function setBadge(id, n, label) { const b = $(id); b.textContent = `${n} ${label}`; b.classList.toggle('hidden', n === 0); }
+    function refreshDeckBadges() {
+      let nw = 0, due = 0; const now = Date.now();
+      state.cardsAPI.forEach((c) => { const p = state.userProgress[c.id]; if (!p) nw++; else if (p.nextReview && p.nextReview <= now) due++; });
+      setBadge('badgeNew', nw, 'baru'); setBadge('badgeDue', due, 'jatuh tempo');
+    }
+    window.startReviewDeck = async (deckId) => { if (await openDeckMenu(deckId)) startSrsMode('review', 'revLimit', 'review'); };
+    window.startFukushuAll = async () => {
+      let cards; try { cards = await loadAllCards(); } catch { return toast('Gagal memuat kartu.'); }
+      const now = Date.now();
+      const due = Object.values(cards).filter((c) => { const p = state.userProgress[c.id]; return p && p.nextReview && p.nextReview <= now; });
+      if (!due.length) return toast('Belum ada kartu yang jatuh tempo.');
+      state.srsMode = 'review'; state.returnTo = 'review'; state.quizPool = Object.values(cards);
+      state.sessionMeta = { deckId: null, deckName: 'Fukushu semua deck' };
+      state.srsQueue = applySessionLimit(due, 'revLimit'); state.sessionCards = [...state.srsQueue];
+      showScreen('srs'); renderSrsCard();
+    };
+
+    async function renderReview() {
+      let cards;
+      try { cards = await loadAllCards(); } catch { return toast('Gagal memuat data kartu.'); }
+      const now = Date.now();
+      const items = Object.entries(state.userProgress)
+        .filter(([id, p]) => p && p.nextReview && cards[id])
+        .map(([id, p]) => ({ c: cards[id], p, t: p.nextReview })).sort((a, b) => a.t - b.t);
+      const G = { now: [], today: [], tomorrow: [], week: [], later: [] };
+      items.forEach((x) => { const d = diffDays(x.t); (x.t <= now ? G.now : d <= 0 ? G.today : d === 1 ? G.tomorrow : d <= 7 ? G.week : G.later).push(x); });
+      const when = (t) => { const d = diffDays(t); if (t <= now) return d < 0 ? `Terlambat ${-d} hari` : 'Siap sekarang'; if (d === 0) return `Hari ini, ${fmtTime(t)}`; if (d === 1) return `Besok, ${fmtTime(t)}`; return `${d} hari lagi, ${fmtDate(t)}`; };
+      const tile = (l, n, col) => `<div class="tile"><small>${l}</small><b class="${col}">${n}</b></div>`;
+      $('revSummary').innerHTML = tile('Siap sekarang', G.now.length, 'text-[#B95364]') + tile('Hari ini', G.now.length + G.today.length, 'text-[#5582C3]') + tile('7 hari ke depan', items.filter((x) => diffDays(x.t) <= 7).length, 'text-[#2B7A62]');
+
+      const byDeck = {};
+      G.now.forEach((x) => { (byDeck[x.c.deckId] ||= { name: x.c.deckName, n: 0 }).n++; });
+      const next = items.find((x) => x.t > now);
+      $('revDecks').innerHTML = `<div class="panel p-4"><div class="flex items-center justify-between gap-3 mb-2"><h3 class="font-bold text-[16px]">Fukushu (復習)</h3><label class="flex items-center gap-2 text-[13px] text-[#647B91]">Jumlah <select id="revLimit" class="inp !min-h-[40px] !py-1" onchange="setRevLimit(this.value)">${[10, 15, 20, 30, 9999].map((n) => `<option value="${n}" ${String(state.revLimit || 10) === String(n) ? 'selected' : ''}>${n === 9999 ? 'Semua' : n}</option>`).join('')}</select></label></div><p class="text-[13px] text-[#647B91] mb-3">Mode khusus ulangan: hanya kartu yang sudah jatuh tempo, tanpa kartu baru. Setelah flashcard, lanjut kuis.</p>${G.now.length ? `<button class="btn btn-main w-full mb-2" onclick="startFukushuAll()"><i class="fa-solid fa-rotate"></i> Mulai Fukushu semua deck (${G.now.length})</button>` : ''}` + (Object.keys(byDeck).length
+        ? Object.entries(byDeck).map(([id, d]) => `<div class="flex items-center gap-3 py-2"><div class="min-w-0 flex-1"><div class="font-bold truncate">${esc(d.name)}</div><div class="text-[13px] text-[#647B91]">${d.n} kartu siap diulang</div></div><button class="btn btn-main !min-h-[44px] !py-2 !px-4 text-[14px]" onclick="startReviewDeck(${Number(id)})">Mulai</button></div>`).join('')
+        : `<p class="text-[14px] text-[#647B91]">${items.length ? `Tidak ada kartu yang perlu diulang sekarang. Review berikutnya: ${when(next.t).toLowerCase()}.` : 'Belum ada kartu terjadwal. Selesaikan sesi flashcard, lalu kartu yang kamu nilai akan muncul di sini.'}</p>`) + `</div>`;
+
+      const groups = [['now', 'Siap diulang sekarang'], ['today', 'Nanti hari ini'], ['tomorrow', 'Besok'], ['week', '2 sampai 7 hari lagi'], ['later', 'Lebih dari 7 hari']];
+      const row = (x) => `<div class="flex items-center gap-3 py-2.5"><div class="min-w-0 flex-1"><div class="flex items-baseline gap-2"><span class="jp text-[18px] font-extrabold">${esc(x.c.kanji)}</span><span class="jp text-[14px] font-bold text-[#5582C3] truncate">${esc(x.c.furigana)}</span></div><div class="text-[13px] text-[#647B91] truncate">${esc(x.c.arti)}</div></div><div class="text-right flex-none"><div class="text-[13px] font-bold">${when(x.t)}</div><div class="text-[12px] text-[#8BAED9]">Level ${x.p.level || 0}</div></div></div>`;
+      $('revTimeline').innerHTML = groups.filter(([k]) => G[k].length).map(([k, label]) =>
+        `<div class="panel p-4"><h3 class="font-bold text-[15px] mb-1">${label} <span class="text-[#8BAED9]">(${G[k].length})</span></h3><div class="divide-y divide-[#E1EBF5]">${G[k].slice(0, 30).map(row).join('')}</div>${G[k].length > 30 ? `<p class="text-[13px] text-[#8BAED9] pt-2">dan ${G[k].length - 30} kartu lainnya</p>` : ''}</div>`).join('');
+    }
+  </script>
+</body>
+</html>

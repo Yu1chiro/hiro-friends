@@ -1,0 +1,21 @@
+{
+  "name": "hiro-friends",
+  "version": "1.0.0",
+  "description": "Flashcards SRS Web App by Hiro",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "dependencies": {
+    "cookie-parser": "^1.4.6",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "jsonwebtoken": "^9.0.2",
+    "pg": "^8.11.5"
+  },
+  "author": "Hiro",
+  "license": "ISC",
+  "keywords": [],
+  "type": "commonjs"
+}

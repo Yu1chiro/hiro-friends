@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#F6F1FF">
+  <title>Masuk | Hiro Friends Flashcards</title>
+  <link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700;900&display=swap" rel="stylesheet">
+  <style>
+    :root { --ink:#3B3556; --muted:#7B7596; --line:#E6DEF8; --lav:#D9D0F7; --peach:#FFDCCF; --mint:#CDEFE0; --sky:#C6E3FA; --pink:#FBD6E6; }
+    * { box-sizing:border-box; margin:0; -webkit-tap-highlight-color:transparent; }
+    html, body { height:100%; }
+    body {
+      font-family:'Zen Maru Gothic','Hiragino Maru Gothic ProN',system-ui,sans-serif; color:var(--ink);
+      background:
+        radial-gradient(60% 40% at 8% 4%, var(--pink) 0%, transparent 70%),
+        radial-gradient(55% 45% at 100% 22%, var(--sky) 0%, transparent 70%),
+        radial-gradient(70% 45% at 0% 100%, var(--mint) 0%, transparent 70%),
+        radial-gradient(60% 40% at 100% 100%, var(--peach) 0%, transparent 70%),
+        #F8F4FF;
+      display:grid; place-items:center;
+      min-height:100dvh; padding:calc(24px + env(safe-area-inset-top)) 24px calc(24px + env(safe-area-inset-bottom));
+    }
+    main { width:100%; max-width:360px; text-align:center; display:flex; flex-direction:column; align-items:center; }
+
+    /* Tumpukan kartu */
+    .stack { position:relative; width:236px; height:168px; margin-bottom:40px; animation:drift 6s ease-in-out infinite; }
+    .c { position:absolute; inset:0; border-radius:28px; box-shadow:0 18px 30px -18px rgba(110,90,190,.45); }
+    .c.a { background:var(--peach); transform:translate(-16px,8px) rotate(-9deg); }
+    .c.b { background:var(--mint);  transform:translate(16px,5px) rotate(7deg); }
+    .c.front { background:#FFFDFF; border:1px solid var(--line); transform:rotate(-1.5deg); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; }
+    .c.front small { font-size:13px; font-weight:700; color:var(--muted); }
+    .c.front b { font-size:54px; line-height:1.15; font-weight:900; letter-spacing:.04em; }
+    .c.front i { font-style:normal; margin-top:6px; padding:3px 14px; border-radius:99px; background:#EFE9FE; font-size:13px; font-weight:700; }
+    @keyframes drift { 50% { transform:translateY(-7px); } }
+
+    h1 { font-size:30px; line-height:1.2; font-weight:900; letter-spacing:-.01em; }
+    p.lead { margin-top:12px; font-size:16px; line-height:1.7; color:var(--muted); font-weight:500; max-width:300px; }
+
+    .go {
+      margin-top:32px; width:100%; min-height:58px; border:1px solid var(--line); border-radius:20px; background:#fff; color:var(--ink);
+      font:700 17px/1 inherit; font-family:inherit; display:flex; align-items:center; justify-content:center; gap:12px; cursor:pointer;
+      box-shadow:0 14px 26px -16px rgba(110,90,190,.55); transition:transform .15s, box-shadow .15s;
+    }
+    .go:active { transform:scale(.97); }
+    .go:disabled { opacity:.7; cursor:wait; }
+    .go:focus-visible { outline:3px solid #A99BE8; outline-offset:3px; }
+    .go svg { width:22px; height:22px; flex:none; }
+
+    #msg { min-height:22px; margin-top:14px; font-size:14px; font-weight:700; color:#B4506A; }
+    .note { margin-top:10px; font-size:13px; color:var(--muted); font-weight:500; }
+
+    @media (prefers-reduced-motion:reduce) { .stack { animation:none; } .go { transition:none; } }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="stack" aria-hidden="true">
+      <div class="c a"></div>
+      <div class="c b"></div>
+      <div class="c front"><small>ともだち</small><b class="jp">友達</b><i>teman</i></div>
+    </div>
+
+    <h1>Hiro Friends<br>Flashcards</h1>
+    <p class="lead">Hafalkan kosakata Jepang sedikit demi sedikit, ditemani jadwal ulang otomatis.</p>
+
+    <button id="googleLogin" class="go" type="button">
+      <svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.6l6.8-6.8C35.9 2.4 30.4 0 24 0 14.6 0 6.5 5.4 2.6 13.2l7.9 6.1C12.4 13.6 17.7 9.5 24 9.5z"/><path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.7c-.6 3-2.3 5.5-4.8 7.2l7.6 5.9c4.4-4.1 7-10.1 7-17.6z"/><path fill="#FBBC05" d="M10.5 28.7a14.5 14.5 0 0 1 0-9.4l-7.9-6.1a24 24 0 0 0 0 21.6l7.9-6.1z"/><path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.6-5.9c-2.1 1.4-4.9 2.3-8.3 2.3-6.3 0-11.6-4.1-13.5-9.8l-7.9 6.1C6.5 42.6 14.6 48 24 48z"/></svg>
+      <span id="btnText">Masuk dengan Google</span>
+    </button>
+    <div id="msg" role="alert" aria-live="polite"></div>
+    <p class="note">Progres belajarmu tersimpan otomatis di akunmu.</p>
+  </main>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCKuYqawGN0V9LNkf0Mx4zqV0RI2wM4mWk",
+      authDomain: "hiro-friends.firebaseapp.com",
+      databaseURL: "https://hiro-friends-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "hiro-friends",
+      storageBucket: "hiro-friends.firebasestorage.app",
+      messagingSenderId: "63657838295",
+      appId: "1:63657838295:web:6be499090546143c0ad292",
+      measurementId: "G-GGDN66ZW3T"
+    };
+
+    const auth = getAuth(initializeApp(firebaseConfig));
+    const provider = new GoogleAuthProvider();
+    const btn = document.getElementById("googleLogin");
+    const msg = document.getElementById("msg");
+    const btnText = document.getElementById("btnText");
+
+    const busy = (on) => { btn.disabled = on; btnText.textContent = on ? "Menghubungkan…" : "Masuk dengan Google"; };
+
+    // Tukar login Firebase dengan cookie sesi server, agar /dashboard & API boleh diakses
+    async function startServerSession(user) {
+      const idToken = await user.getIdToken();
+      const r = await fetch("/api/auth/session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ idToken })
+      });
+      if (!r.ok) throw new Error((await r.json().catch(() => ({}))).error || "Gagal membuat sesi. Coba lagi.");
+    }
+
+    onAuthStateChanged(auth, async (user) => {
+      if (!user) return;
+      busy(true);
+      try {
+        await startServerSession(user);
+        window.location.replace("/dashboard");
+      } catch (e) {
+        msg.textContent = e.message;
+        await signOut(auth).catch(() => {});
+        busy(false);
+      }
+    });
+
+    btn.onclick = async () => {
+      msg.textContent = "";
+      busy(true);
+      try {
+        await signInWithPopup(auth, provider);
+      } catch (e) {
+        busy(false);
+        if (e.code !== "auth/popup-closed-by-user" && e.code !== "auth/cancelled-popup-request")
+          msg.textContent = "Gagal masuk. Periksa koneksi lalu coba lagi.";
+      }
+    };
+  </script>
+</body>
+</html>
